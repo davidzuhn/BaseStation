@@ -425,21 +425,24 @@ void SerialCommand::parse(char *com){
 /*
  *    stores settings for turnouts and sensors EEPROM
  *    
- *    returns: <e nTurnouts nSensors>
+ *    returns: <e T:nTurnouts S:nSensors O:nOutputs>
 */
      
     EEStore::store();
     INTERFACE.print("<e");
 #if HANDLE_TURNOUTS
     INTERFACE.print(" ");
+    INTERFACE.print("T:");
     INTERFACE.print(EEStore::eeStore->data.nTurnouts);
 #endif
 #if HANDLE_SENSORS
     INTERFACE.print(" ");
+    INTERFACE.print("S:");
     INTERFACE.print(EEStore::eeStore->data.nSensors);
 #endif
 #if HANDLE_OUTPUTS
     INTERFACE.print(" ");
+    INTERFACE.print("O:");
     INTERFACE.print(EEStore::eeStore->data.nOutputs);
 #endif
     INTERFACE.print(">");
