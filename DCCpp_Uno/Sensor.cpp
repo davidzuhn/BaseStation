@@ -56,6 +56,9 @@ decide to ignore the <q ID> return and only react to <Q ID> triggers.
 **********************************************************************/
 
 #include "DCCpp_Uno.h"
+
+#if HANDLE_SENSORS
+
 #include "Sensor.h"
 #include "EEStore.h"
 #include <EEPROM.h>
@@ -246,3 +249,4 @@ void Sensor::store(){
 
 Sensor *Sensor::firstSensor=NULL;
 
+#endif // HANDLE_SENSORS

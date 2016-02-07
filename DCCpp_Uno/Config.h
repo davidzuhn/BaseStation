@@ -55,4 +55,20 @@ Part of DCC++ BASE STATION for the Arduino
 #define MAC_ADDRESS {  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF }
 
 /////////////////////////////////////////////////////////////////////////////////////
+//
+// DEFINE OPTIONAL COMPONENTS (SET TO 0 TO REMOVE FUNCTIONALITY)
+//
+
+#define HANDLE_SENSORS 0          // Arduino Pin inputs
+#define HANDLE_OUTPUTS 0          // Arduino Pin outputs
+#define HANDLE_TURNOUTS 0         // DCC Stationary Decoders
+#define HANDLE_EESTORE 1          // NVRAM storage
+
+
+// It makes no sense to have the EEstore code when there's nothing to store
+#if HANDLE_SENSORS == 0 && HANDLE_OUTPUTS == 0 && HANDLE_TURNOUTS == 0
+#define HANDLE_EESTORE 0
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////
 

@@ -10,13 +10,21 @@ Part of DCC++ BASE STATION for the Arduino
 #ifndef EEStore_h
 #define EEStore_h
 
+#include "DCCpp_Uno.h"
+
 #define  EESTORE_ID "DCC++"
 
 struct EEStoreData{
   char id[sizeof(EESTORE_ID)];
+#if HANDLE_TURNOUTS
   int nTurnouts;
-  int nSensors;  
-  int nOutputs;
+#endif
+#if HANDLE_SENSORS
+  int nSensors;
+#endif
+#if HANDLE_OUTPUTS
+    int nOutputs;
+#endif
 };
 
 struct EEStore{

@@ -142,6 +142,7 @@ void SerialCommand::parse(char *com){
       
 /***** OPERATE STATIONARY ACCESSORY DECODERS  ****/    
 
+#if HANDLE_TURNOUTS
     case 'a':       // <a ADDRESS SUBADDRESS ACTIVATE>
 /*
  *    turns an accessory (stationary) decoder on or off
@@ -165,7 +166,11 @@ void SerialCommand::parse(char *com){
       mRegs->setAccessory(com+1);
       break;
 
+#endif // HANDLE_TURNOUTS
+
 /***** CREATE/EDIT/REMOVE/SHOW & OPERATE A TURN-OUT  ****/    
+
+#if HANDLE_TURNOUTS
 
     case 'T':       // <T ID THROW>
 /*
@@ -182,7 +187,11 @@ void SerialCommand::parse(char *com){
       Turnout::parse(com+1);
       break;
 
+#endif // HANDLE_TURNOUTS
+
 /***** CREATE/EDIT/REMOVE/SHOW & OPERATE AN OUTPUT PIN  ****/    
+
+#if HANDLE_OUTPUTS
 
     case 'Z':       // <Z ID ACTIVATE>
 /*
@@ -198,8 +207,12 @@ void SerialCommand::parse(char *com){
  */
       Output::parse(com+1);
       break;
+
+#endif // HANDLE_OUTPUTS
       
 /***** CREATE/EDIT/REMOVE/SHOW A SENSOR  ****/    
+
+#if HANDLE_SENSORS
 
     case 'S': 
 /*   
@@ -209,7 +222,11 @@ void SerialCommand::parse(char *com){
       Sensor::parse(com+1);
       break;
 
+#endif // HANDLE_SENSORS
+
 /***** SHOW STATUS OF ALL SENSORS ****/
+
+#if HANDLE_SENSORS
 
     case 'Q':         // <Q>
 /*
@@ -217,6 +234,8 @@ void SerialCommand::parse(char *com){
  */
       Sensor::status();
       break;
+
+#endif // HANDLE_SENSORS
 
 /***** WRITE CONFIGURATION VARIABLE BYTE TO ENGINE DECODER ON MAIN OPERATIONS TRACK  ****/    
 
@@ -389,14 +408,19 @@ void SerialCommand::parse(char *com){
         INTERFACE.print(Ethernet.localIP());
         INTERFACE.print(">");
       #endif
-      
+
+#if HANDLE_TURNOUTS
       Turnout::show();
+#endif
+#if HANDLE_OUTPUTS
       Output::show();
+#endif
                         
       break;
 
 /***** STORE SETTINGS IN EEPROM  ****/    
 
+#if HANDLE_EESTORE
     case 'E':     // <E>
 /*
  *    stores settings for turnouts and sensors EEPROM
@@ -405,17 +429,28 @@ void SerialCommand::parse(char *com){
 */
      
     EEStore::store();
-    INTERFACE.print("<e ");
+    INTERFACE.print("<e");
+#if HANDLE_TURNOUTS
+    INTERFACE.print(" ");
     INTERFACE.print(EEStore::eeStore->data.nTurnouts);
+#endif
+#if HANDLE_SENSORS
     INTERFACE.print(" ");
     INTERFACE.print(EEStore::eeStore->data.nSensors);
+#endif
+#if HANDLE_OUTPUTS
     INTERFACE.print(" ");
     INTERFACE.print(EEStore::eeStore->data.nOutputs);
+#endif
     INTERFACE.print(">");
     break;
+
+#endif // HANDLE_EESTORE
     
 /***** CLEAR SETTINGS IN EEPROM  ****/    
 
+
+#if HANDLE_EESTORE
     case 'e':     // <e>
 /*
  *    clears settings for Turnouts in EEPROM
@@ -426,6 +461,8 @@ void SerialCommand::parse(char *com){
     EEStore::clear();
     INTERFACE.print("<O>");
     break;
+
+#endif // HANDLE_EESTORE
 
 /***** PRINT CARRIAGE RETURN IN SERIAL MONITOR WINDOW  ****/    
                 

@@ -71,9 +71,12 @@ the state of any outputs being monitored or controlled by a separate interface o
 
 **********************************************************************/
 
+#include "DCCpp_Uno.h"
+
+#if HANDLE_OUTPUTS
+
 #include "Outputs.h"
 #include "SerialCommand.h"
-#include "DCCpp_Uno.h"
 #include "EEStore.h"
 #include <EEPROM.h>
 #include "Comm.h"
@@ -254,3 +257,4 @@ Output *Output::create(int id, int pin, int iFlag, int v){
 
 Output *Output::firstOutput=NULL;
 
+#endif // HANDLE_OUTPUTS

@@ -209,7 +209,9 @@ void loop(){
     progMonitor.check();
   }
 
+#if HANDLE_SENSORS
   Sensor::check();    // check sensors for activate/de-activate
+#endif
   
 } // loop
 
@@ -227,7 +229,9 @@ void setup(){
     digitalWrite(SDCARD_CS,HIGH);     // Deselect the SD card
   #endif
 
+#if HANDLE_EESTORE
   EEStore::init();                                          // initialize and load Turnout and Sensor definitions stored in EEPROM
+#endif
 
   pinMode(A5,INPUT);                                       // if pin A5 is grounded upon start-up, print system configuration and halt
   digitalWrite(A5,HIGH);
@@ -514,12 +518,18 @@ void showConfiguration(){
   Serial.print("\n     CURRENT: ");
   Serial.print(CURRENT_MONITOR_PIN_PROG);
 
+#if HANDLE_TURNOUTS
   Serial.print("\n\nNUM TURNOUTS: ");
   Serial.print(EEStore::eeStore->data.nTurnouts);
+#endif
+#if HANDLE_SENSORS
   Serial.print("\n     SENSORS: ");
   Serial.print(EEStore::eeStore->data.nSensors);
+#endif
+#if HANDLE_OUTPUTS
   Serial.print("\n     OUTPUTS: ");
   Serial.print(EEStore::eeStore->data.nOutputs);
+#endif
   
   Serial.print("\n\nINTERFACE:    ");
   #if COMM_TYPE == 0

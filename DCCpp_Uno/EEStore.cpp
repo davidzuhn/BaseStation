@@ -8,6 +8,9 @@ Part of DCC++ BASE STATION for the Arduino
 **********************************************************************/
 
 #include "DCCpp_Uno.h"
+
+#if HANDLE_EESTORE
+
 #include "EEStore.h"
 #include "Accessories.h"
 #include "Sensor.h"
@@ -24,18 +27,20 @@ void EEStore::init(){
   EEPROM.get(0,eeStore->data);                                       // get eeStore data 
   
   if(strncmp(eeStore->data.id,EESTORE_ID,sizeof(EESTORE_ID))!=0){    // check to see that eeStore contains valid DCC++ ID
-    sprintf(eeStore->data.id,EESTORE_ID);                           // if not, create blank eeStore structure (no turnouts, no sensors) and save it back to EEPROM
-    eeStore->data.nTurnouts=0;
-    eeStore->data.nSensors=0;
-    eeStore->data.nOutputs=0;
-    EEPROM.put(0,eeStore->data);    
+      EEStore::clear();
   }
   
   reset();            // set memory pointer to first free EEPROM space
+#if HANDLE_TURNOUTS
   Turnout::load();    // load turnout definitions
+#endif
+#if HANDLE_SENSORS
   Sensor::load();     // load sensor definitions
+#endif
+#if HANDLE_OUTPUTS
   Output::load();     // load output definitions
-  
+#endif
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -43,9 +48,15 @@ void EEStore::init(){
 void EEStore::clear(){
     
   sprintf(eeStore->data.id,EESTORE_ID);                           // create blank eeStore structure (no turnouts, no sensors) and save it back to EEPROM
+#if HANDLE_TURNOUTS
   eeStore->data.nTurnouts=0;
+#endif
+#if HANDLE_SENSORS
   eeStore->data.nSensors=0;
+#endif
+#if HANDLE_OUTPUTS
   eeStore->data.nOutputs=0;
+#endif
   EEPROM.put(0,eeStore->data);    
   
 }
@@ -54,9 +65,15 @@ void EEStore::clear(){
 
 void EEStore::store(){
   reset();
+#if HANDLE_TURNOUTS
   Turnout::store();
-  Sensor::store();  
-  Output::store();  
+#endif
+#if HANDLE_SENSORS
+  Sensor::store();
+#endif
+#if HANDLE_OUTPUTS  
+  Output::store();
+#endif  
   EEPROM.put(0,eeStore->data);    
 }
 
@@ -81,3 +98,5 @@ int EEStore::pointer(){
 EEStore *EEStore::eeStore=NULL;
 int EEStore::eeAddress=0;
 
+
+#endif // HANDLE_EESTORE
