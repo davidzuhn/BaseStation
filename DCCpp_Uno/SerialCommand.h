@@ -10,6 +10,8 @@ Part of DCC++ BASE STATION for the Arduino
 #ifndef SerialCommand_h
 #define SerialCommand_h
 
+#include "DCCpp_Uno.h"
+
 #include "PacketRegister.h"
 #include "CurrentMonitor.h"
 
@@ -17,9 +19,26 @@ Part of DCC++ BASE STATION for the Arduino
 
 struct SerialCommand{
   static char commandString[MAX_COMMAND_LENGTH+1];
-  static volatile RegisterList *mRegs, *pRegs;
+#if HANDLE_MAIN_TRACK
   static CurrentMonitor *mMonitor;
-  static void init(volatile RegisterList *, volatile RegisterList *, CurrentMonitor *);
+  static volatile RegisterList *mRegs;
+#endif
+#if HANDLE_PROG_TRACK
+  static volatile RegisterList *pRegs;
+#endif
+
+  static void init(
+#if HANDLE_MAIN_TRACK
+				  volatile RegisterList *_mRegs, 
+				  CurrentMonitor *_mMonitor
+#endif
+#if HANDLE_MAIN_TRACK && HANDLE_PROG_TRACK
+				  ,
+#endif
+#if HANDLE_PROG_TRACK
+                                  volatile RegisterList *_pRegs
+#endif
+				  );
   static void parse(char *);
   static void process();
 }; // SerialCommand

@@ -190,11 +190,16 @@ void showConfiguration();
 // NEXT DECLARE GLOBAL OBJECTS TO PROCESS AND STORE DCC PACKETS AND MONITOR TRACK CURRENTS.
 // NOTE REGISTER LISTS MUST BE DECLARED WITH "VOLATILE" QUALIFIER TO ENSURE THEY ARE PROPERLY UPDATED BY INTERRUPT ROUTINES
 
+#if HANDLE_MAIN_TRACK
 volatile RegisterList mainRegs(MAX_MAIN_REGISTERS);    // create list of registers for MAX_MAIN_REGISTER Main Track Packets
-volatile RegisterList progRegs(2);                     // create a shorter list of only two registers for Program Track Packets
-
 CurrentMonitor mainMonitor(CURRENT_MONITOR_PIN_MAIN,"<p2>");  // create monitor for current on Main Track
+#endif
+
+#if HANDLE_PROG_TRACK
+volatile RegisterList progRegs(2);                     // create a shorter list of only two registers for Program Track Packets
 CurrentMonitor progMonitor(CURRENT_MONITOR_PIN_PROG,"<p3>");  // create monitor for current on Program Track
+#endif
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // MAIN ARDUINO LOOP
@@ -205,8 +210,12 @@ void loop(){
   SerialCommand::process();              // check for, and process, and new serial commands
   
   if(CurrentMonitor::checkTime()){      // if sufficient time has elapsed since last update, check current draw on Main and Program Tracks 
+#if HANDLE_MAIN_TRACK
     mainMonitor.check();
+#endif
+#if HANDLE_PROG_TRACK
     progMonitor.check();
+#endif
   }
 
 #if HANDLE_SENSORS
@@ -259,7 +268,18 @@ void setup(){
     INTERFACE.begin();
   #endif
              
-  SerialCommand::init(&mainRegs, &progRegs, &mainMonitor);   // create structure to read and parse commands from serial line
+  SerialCommand::init(
+#if HANDLE_MAIN_TRACK
+      &mainRegs,
+      &mainMonitor
+#endif
+#if HANDLE_MAIN_TRACK && HANDLE_PROG_TRACK
+      ,
+#endif
+#if HANDLE_PROG_TRACK
+      &progRegs
+#endif
+  );   // create structure to read and parse commands from serial line
 
   Serial.print("<N");
   Serial.print(COMM_TYPE);
@@ -307,7 +327,9 @@ void setup(){
   
   pinMode(SIGNAL_ENABLE_PIN_MAIN,OUTPUT);   // master enable for motor channel A
 
+#if HANDLE_MAIN_TRACK
   mainRegs.loadPacket(1,RegisterList::idlePacket,2,0);    // load idle packet into register 1    
+#endif
       
   bitSet(TIMSK1,OCIE1B);    // enable interrupt vector for Timer 1 Output Compare B Match (OCR1B)    
 
@@ -347,7 +369,9 @@ void setup(){
   
   pinMode(SIGNAL_ENABLE_PIN_PROG,OUTPUT);   // master enable for motor channel B
 
+#if HANDLE_PROG_TRACK
   progRegs.loadPacket(1,RegisterList::idlePacket,2,0);    // load idle packet into register 1    
+#endif
       
   bitSet(TIMSK0,OCIE0B);    // enable interrupt vector for Timer 0 Output Compare B Match (OCR0B)
 
@@ -386,7 +410,9 @@ void setup(){
   
   pinMode(SIGNAL_ENABLE_PIN_PROG,OUTPUT);   // master enable for motor channel B
 
+#if HANDLE_PROG_TRACK
   progRegs.loadPacket(1,RegisterList::idlePacket,2,0);    // load idle packet into register 1    
+#endif
       
   bitSet(TIMSK3,OCIE3B);    // enable interrupt vector for Timer 3 Output Compare B Match (OCR3B)    
   
@@ -458,9 +484,13 @@ void setup(){
 
 // NOW USE THE ABOVE MACRO TO CREATE THE CODE FOR EACH INTERRUPT
 
+#if HANDLE_MAIN_TRACK
 ISR(TIMER1_COMPB_vect){              // set interrupt service for OCR1B of TIMER-1 which flips direction bit of Motor Shield Channel A controlling Main Track
   DCC_SIGNAL(mainRegs,1)
 }
+#endif // HANDLE_MAIN_TRACK
+
+#if HANDLE_PROG_TRACK
 
 #ifdef ARDUINO_AVR_UNO      // Configuration for UNO
 
@@ -473,9 +503,9 @@ ISR(TIMER0_COMPB_vect){              // set interrupt service for OCR1B of TIMER
 ISR(TIMER3_COMPB_vect){              // set interrupt service for OCR3B of TIMER-3 which flips direction bit of Motor Shield Channel B controlling Prog Track
   DCC_SIGNAL(progRegs,3)
 }
+#endif // MEGA
 
-#endif
-
+#endif // HANDLE_PROG_TRACK
 
 ///////////////////////////////////////////////////////////////////////////////
 // PRINT CONFIGURATION INFO TO SERIAL PORT REGARDLESS OF INTERFACE TYPE

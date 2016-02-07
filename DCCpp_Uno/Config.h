@@ -59,11 +59,19 @@ Part of DCC++ BASE STATION for the Arduino
 // DEFINE OPTIONAL COMPONENTS (SET TO 0 TO REMOVE FUNCTIONALITY)
 //
 
-#define HANDLE_SENSORS 0          // Arduino Pin inputs
-#define HANDLE_OUTPUTS 0          // Arduino Pin outputs
-#define HANDLE_TURNOUTS 0         // DCC Stationary Decoders
+#define HANDLE_SENSORS 1          // Arduino Pin inputs
+#define HANDLE_OUTPUTS 1          // Arduino Pin outputs
+#define HANDLE_TURNOUTS 1         // DCC Stationary Decoders
 #define HANDLE_EESTORE 1          // NVRAM storage
 
+#define HANDLE_DIAGNOSTICS 1      // Various debugging commands
+
+#define HANDLE_MAIN_TRACK 1       // support operations
+#define HANDLE_PROG_TRACK 1
+
+#if HANDLE_MAIN_TRACK == 0 && HANDLE_PROG_TRACK == 0
+  #error WHAT IS THE POINT OF THAT?
+#endif
 
 // It makes no sense to have the EEstore code when there's nothing to store
 #if HANDLE_SENSORS == 0 && HANDLE_OUTPUTS == 0 && HANDLE_TURNOUTS == 0

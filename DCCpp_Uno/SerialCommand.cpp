@@ -22,21 +22,44 @@ Part of DCC++ BASE STATION for the Arduino
 #include "EEStore.h"
 #include "Comm.h"
 
+#if HANDLE_DIAGNOSTICS
 extern int __heap_start, *__brkval;
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
 char SerialCommand::commandString[MAX_COMMAND_LENGTH+1];
+
+#if HANDLE_MAIN_TRACK
 volatile RegisterList *SerialCommand::mRegs;
-volatile RegisterList *SerialCommand::pRegs;
 CurrentMonitor *SerialCommand::mMonitor;
+#endif
+#if HANDLE_PROG_TRACK
+volatile RegisterList *SerialCommand::pRegs;
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void SerialCommand::init(volatile RegisterList *_mRegs, volatile RegisterList *_pRegs, CurrentMonitor *_mMonitor){
+void SerialCommand::init(
+#if HANDLE_MAIN_TRACK
+                         volatile RegisterList *_mRegs, 
+                         CurrentMonitor *_mMonitor
+#endif
+#if HANDLE_MAIN_TRACK && HANDLE_PROG_TRACK
+			 ,
+#endif
+#if HANDLE_PROG_TRACK
+                         volatile RegisterList *_pRegs
+#endif
+			 ) {
+
+#if HANDLE_MAIN_TRACK
   mRegs=_mRegs;
-  pRegs=_pRegs;
   mMonitor=_mMonitor;
+#endif
+#if HANDLE_PROG_TRACK
+  pRegs=_pRegs;
+#endif
   sprintf(commandString,"");
 } // SerialCommand:SerialCommand
 
@@ -85,6 +108,7 @@ void SerialCommand::parse(char *com){
 
 /***** SET ENGINE THROTTLES USING 128-STEP SPEED CONTROL ****/    
 
+#if HANDLE_MAIN_TRACK
     case 't':       // <t REGISTER CAB SPEED DIRECTION>
 /*
  *    sets the throttle for a given register/cab combination 
@@ -99,9 +123,11 @@ void SerialCommand::parse(char *com){
  */
       mRegs->setThrottle(com+1);
       break;
+#endif // HANDLE_MAIN_TRACK
 
 /***** OPERATE ENGINE DECODER FUNCTIONS F0-F28 ****/    
 
+#if HANDLE_MAIN_TRACK
     case 'f':       // <f CAB BYTE1 [BYTE2]>
 /*
  *    turns on and off engine decoder functions F0-F28 (F0 is sometimes called FL)  
@@ -139,6 +165,7 @@ void SerialCommand::parse(char *com){
  */
       mRegs->setFunction(com+1);
       break;
+#endif // HANDLE_MAIN_TRACK
       
 /***** OPERATE STATIONARY ACCESSORY DECODERS  ****/    
 
@@ -239,6 +266,7 @@ void SerialCommand::parse(char *com){
 
 /***** WRITE CONFIGURATION VARIABLE BYTE TO ENGINE DECODER ON MAIN OPERATIONS TRACK  ****/    
 
+#if HANDLE_MAIN_TRACK
     case 'w':      // <w CAB CV VALUE>
 /*
  *    writes, without any verification, a Configuration Variable to the decoder of an engine on the main operations track
@@ -250,10 +278,12 @@ void SerialCommand::parse(char *com){
  *    returns: NONE
 */    
       mRegs->writeCVByteMain(com+1);
-      break;      
+      break;
+#endif // HANDLE_MAIN_TRACK
 
 /***** WRITE CONFIGURATION VARIABLE BIT TO ENGINE DECODER ON MAIN OPERATIONS TRACK  ****/    
 
+#if HANDLE_MAIN_TRACK
     case 'b':      // <b CAB CV BIT VALUE>
 /*
  *    writes, without any verification, a single bit within a Configuration Variable to the decoder of an engine on the main operations track
@@ -266,10 +296,12 @@ void SerialCommand::parse(char *com){
  *    returns: NONE
 */        
       mRegs->writeCVBitMain(com+1);
-      break;      
+      break;
+#endif // HANDLE_MAIN_TRACK
 
 /***** WRITE CONFIGURATION VARIABLE BYTE TO ENGINE DECODER ON PROGRAMMING TRACK  ****/    
 
+#if HANDLE_PROG_TRACK
     case 'W':      // <W CV VALUE CALLBACKNUM CALLBACKSUB>
 /*
  *    writes, and then verifies, a Configuration Variable to the decoder of an engine on the programming track
@@ -283,10 +315,12 @@ void SerialCommand::parse(char *com){
  *    where VALUE is a number from 0-255 as read from the requested CV, or -1 if verificaiton read fails
 */    
       pRegs->writeCVByte(com+1);
-      break;      
+      break;
+#endif // HANDLE_PROG_TRACK
 
 /***** WRITE CONFIGURATION VARIABLE BIT TO ENGINE DECODER ON PROGRAMMING TRACK  ****/    
 
+#if HANDLE_PROG_TRACK
     case 'B':      // <B CV BIT VALUE CALLBACKNUM CALLBACKSUB>
 /*
  *    writes, and then verifies, a single bit within a Configuration Variable to the decoder of an engine on the programming track
@@ -301,10 +335,12 @@ void SerialCommand::parse(char *com){
  *    where VALUE is a number from 0-1 as read from the requested CV bit, or -1 if verificaiton read fails
 */    
       pRegs->writeCVBit(com+1);
-      break;      
+      break;
+#endif // HANDLE_PROG_TRACK
 
 /***** READ CONFIGURATION VARIABLE BYTE FROM ENGINE DECODER ON PROGRAMMING TRACK  ****/    
 
+#if HANDLE_PROG_TRACK
     case 'R':     // <R CV CALLBACKNUM CALLBACKSUB>
 /*    
  *    reads a Configuration Variable from the decoder of an engine on the programming track
@@ -318,6 +354,7 @@ void SerialCommand::parse(char *com){
 */    
       pRegs->readCV(com+1);
       break;
+#endif // HANDLE_PROG_TRACK
 
 /***** TURN ON POWER FROM MOTOR SHIELD TO TRACKS  ****/    
 
@@ -326,9 +363,13 @@ void SerialCommand::parse(char *com){
  *    enables power from the motor shield to the main operations and programming tracks
  *    
  *    returns: <p1>
- */    
+ */
+#if HANDLE_PROG_TRACK
      digitalWrite(SIGNAL_ENABLE_PIN_PROG,HIGH);
+#endif
+#if HANDLE_MAIN_TRACK
      digitalWrite(SIGNAL_ENABLE_PIN_MAIN,HIGH);
+#endif
      INTERFACE.print("<p1>");
      break;
           
@@ -340,13 +381,18 @@ void SerialCommand::parse(char *com){
  *    
  *    returns: <p0>
  */
+#if HANDLE_PROG_TRACK
      digitalWrite(SIGNAL_ENABLE_PIN_PROG,LOW);
+#endif
+#if HANDLE_MAIN_TRACK
      digitalWrite(SIGNAL_ENABLE_PIN_MAIN,LOW);
+#endif
      INTERFACE.print("<p0>");
      break;
 
 /***** READ MAIN OPERATIONS TRACK CURRENT  ****/    
 
+#if HANDLE_MAIN_TRACK
     case 'c':     // <c>
 /*
  *    reads current being drawn on main operations track
@@ -358,6 +404,7 @@ void SerialCommand::parse(char *com){
       INTERFACE.print(int(mMonitor->current));
       INTERFACE.print(">");
       break;
+#endif // HANDLE_MAIN_TRACK
 
 /***** READ STATUS OF DCC++ BASE STATION  ****/    
 
@@ -373,6 +420,7 @@ void SerialCommand::parse(char *com){
       else
         INTERFACE.print("<p1>");
 
+#if HANDLE_MAIN_TRACK
       for(int i=1;i<=MAX_MAIN_REGISTERS;i++){
         if(mRegs->speedTable[i]==0)
           continue;
@@ -386,6 +434,8 @@ void SerialCommand::parse(char *com){
           INTERFACE.print(" 0>");
         }          
       }
+#endif // HANDLE_MAIN_TRACK
+
       INTERFACE.print("<iDCC++ BASE STATION FOR ARDUINO ");
       INTERFACE.print(ARDUINO_TYPE);
       INTERFACE.print(" / ");
@@ -485,6 +535,7 @@ void SerialCommand::parse(char *com){
 
 /***** ENTER DIAGNOSTIC MODE  ****/    
 
+#if HANDLE_DIAGNOSTICS
     case 'D':       // <D>  
 /*
  *    changes the clock speed of the chip and the pre-scaler for the timers so that you can visually see the DCC signals flickering with an LED
@@ -516,9 +567,11 @@ void SerialCommand::parse(char *com){
     CLKPR=0x08;           // BOARD MUST BE RESET TO RESUME NORMAL OPERATIONS
 
     break;
+#endif // HANDLE_DIAGNOSTICS
 
 /***** WRITE A DCC PACKET TO ONE OF THE REGISTERS DRIVING THE MAIN OPERATIONS TRACK  ****/    
-      
+
+#if HANDLE_DIAGNOSTICS
     case 'M':       // <M REGISTER BYTE1 BYTE2 [BYTE3] [BYTE4] [BYTE5]>
 /*
  *   writes a DCC packet of two, three, four, or five hexidecimal bytes to a register driving the main operations track
@@ -535,9 +588,11 @@ void SerialCommand::parse(char *com){
  */
       mRegs->writeTextPacket(com+1);
       break;
+#endif // HANDLE_DIAGNOSTICS
 
 /***** WRITE A DCC PACKET TO ONE OF THE REGISTERS DRIVING THE PROGRAMMING TRACK  ****/    
 
+#if HANDLE_DIAGNOSTICS
     case 'P':       // <P REGISTER BYTE1 BYTE2 [BYTE3] [BYTE4] [BYTE5]>
 /*
  *   writes a DCC packet of two, three, four, or five hexidecimal bytes to a register driving the programming track
@@ -554,9 +609,11 @@ void SerialCommand::parse(char *com){
  */
       pRegs->writeTextPacket(com+1);
       break;
+#endif // HANDLE_DIAGNOSTICS
             
 /***** ATTEMPTS TO DETERMINE HOW MUCH FREE SRAM IS AVAILABLE IN ARDUINO  ****/        
-      
+
+#if HANDLE_DIAGNOSTICS      
     case 'F':     // <F>
 /*
  *     measure amount of free SRAM memory left on the Arduino based on trick found on the internet.
@@ -571,9 +628,11 @@ void SerialCommand::parse(char *com){
       INTERFACE.print((int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval));
       INTERFACE.print(">");
       break;
+#endif // HANDLE_DIAGNOSTICS
 
 /***** LISTS BIT CONTENTS OF ALL INTERNAL DCC PACKET REGISTERS  ****/        
 
+#if HANDLE_DIAGNOSTICS
     case 'L':     // <L>
 /*
  *    lists the packet contents of the main operations track registers and the programming track registers
@@ -602,10 +661,10 @@ void SerialCommand::parse(char *com){
       }
       INTERFACE.println("");
       break;
+#endif // HANDLE_DIAGNOSTICS
 
   } // switch
 }; // SerialCommand::parse
-
 ///////////////////////////////////////////////////////////////////////////////
 
 
